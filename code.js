@@ -48,42 +48,105 @@ function doPost(e) {
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
     const data = sheet.getDataRange().getValues();
     const headers = data[0];
-    const rows = data.slice(1);
+    let rows = data.slice(1);
     
     // Find if member already exists in this house
     // Criteria: House Number (B) AND Member Name (I)
-    let rowIndex = -1;
+    let targetIndex = -1;
     for (let i = 0; i < rows.length; i++) {
-      if (rows[i][1].toString() === body['मकान नम्बर'].toString() && 
-          rows[i][8].toString() === body['सदस्य का नाम'].toString()) {
-        rowIndex = i + 2; // +1 for 0-index, +1 for headers
+      const houseInRow = rows[i][1] ? rows[i][1].toString().trim() : '';
+      const nameInRow = rows[i][8] ? rows[i][8].toString().trim() : '';
+      const houseInBody = body['मकान नम्बर'] ? body['मकान नम्बर'].toString().trim() : '';
+      const nameInBody = body['सदस्य का नाम'] ? body['सदस्य का नाम'].toString().trim() : '';
+
+      if (houseInRow === houseInBody && nameInRow === nameInBody) {
+        targetIndex = i;
         break;
       }
     }
     
-    const timestamp = new Date().toLocaleString();
-    const newRow = headers.map(header => {
-      if (header === 'Timestamp') return timestamp;
-      if (header === 'क्रम संख्या' && rowIndex === -1) {
-        // Simple auto-increment for new rows
-        return rows.length + 1;
+    const isDelete = (body.action === 'delete');
+    const familyFields = ['परिवार के प्रमुख का नाम', 'फैमिली ID', 'राशन कार्ड संख्या', 'राशन कार्ड का प्रकार', 'धर्म', 'जाति'];
+    
+    // Check if any member of this house already has family data
+    const houseHasFamilyData = rows.some(r => {
+      if (r[1].toString() !== body['मकान नम्बर'].toString()) return false;
+      return familyFields.some(field => {
+        const idx = headers.indexOf(field);
+        return idx !== -1 && r[idx] && r[idx].toString().trim() !== '';
+      });
+    });
+
+    if (isDelete) {
+      if (targetIndex !== -1) {
+        rows.splice(targetIndex, 1);
+      } else {
+        return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Member not found' }))
+          .setMimeType(ContentService.MimeType.JSON);
       }
-      return body[header] || '';
+    } else {
+      const timestamp = new Date().toLocaleString();
+      const isUpdate = (targetIndex !== -1);
+      
+      // IF it is a NEW member AND the house already has family data elsewhere, 
+      // clear the family header fields for this row as requested.
+      if (!isUpdate && houseHasFamilyData) {
+        familyFields.forEach(field => {
+          body[field] = '';
+        });
+      }
+
+      // Create/Update the row data based on headers
+      const currentRow = headers.map((header, index) => {
+        if (header === 'Timestamp') return timestamp;
+        if (header === 'क्रम संख्या') return ''; // Will be calculated after sorting
+        
+        // Get value from body or keep existing if updating
+        if (body[header] !== undefined) return body[header];
+        return isUpdate ? rows[targetIndex][index] : '';
+      });
+      
+      if (isUpdate) {
+        rows[targetIndex] = currentRow;
+      } else {
+        rows.push(currentRow);
+      }
+    }
+    
+    // 1. Sort rows to maintain grouping by House Number (Numeric/String)
+    rows.sort((a, b) => {
+      const houseA = parseFloat(a[1]);
+      const houseB = parseFloat(b[1]);
+      
+      if (!isNaN(houseA) && !isNaN(houseB)) {
+        if (houseA !== houseB) return houseA - houseB;
+      } else {
+        const strA = a[1].toString();
+        const strB = b[1].toString();
+        if (strA !== strB) return strA.localeCompare(strB, undefined, { numeric: true, sensitivity: 'base' });
+      }
+      return 0; // Stable sort keeps original order within the same house
     });
     
-    if (rowIndex !== -1) {
-      // Update existing row
-      // Keep original serial number if update
-      newRow[0] = rows[rowIndex-2][0];
-      sheet.getRange(rowIndex, 1, 1, headers.length).setValues([newRow]);
-      return ContentService.createTextOutput(JSON.stringify({ status: 'success', action: 'updated' }))
-        .setMimeType(ContentService.MimeType.JSON);
-    } else {
-      // Append new row
-      sheet.appendRow(newRow);
-      return ContentService.createTextOutput(JSON.stringify({ status: 'success', action: 'saved' }))
-        .setMimeType(ContentService.MimeType.JSON);
+    // 2. Recalculate Serial Numbers (Column A) from 1 to N
+    for (let i = 0; i < rows.length; i++) {
+      rows[i][0] = i + 1;
     }
+    
+    // 3. Clear existing data and write everything back
+    if (sheet.getLastRow() > 1) {
+      sheet.getRange(2, 1, sheet.getLastRow() - 1, headers.length).clearContent();
+    }
+    if (rows.length > 0) {
+      sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({ 
+      status: 'success', 
+      action: isDelete ? 'deleted' : (targetIndex !== -1 ? 'updated' : 'saved') 
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+    
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: err.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
