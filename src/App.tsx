@@ -50,7 +50,7 @@ export default function App() {
   const [hasSearched, setHasSearched] = useState(false);
   const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [hideFamilySection, setHideFamilySection] = useState(false);
+  const [modalMode, setModalMode] = useState<'family' | 'member'>('family');
   const [memberToDelete, setMemberToDelete] = useState<FamilyMember | null>(null);
 
   // Age calculation
@@ -116,38 +116,54 @@ export default function App() {
 
   // Validation
   const validateForm = () => {
-    const requiredFields: (keyof FamilyMember)[] = [
-      'मकान नम्बर', 'परिवार के प्रमुख का नाम', 'फैमिली ID', 'राशन कार्ड संख्या', 
-      'राशन कार्ड का प्रकार', 'धर्म', 'जाति', 'सदस्य का नाम', 'पिता / पति का नाम', 
-      'लिंग (पु०/म०)', 'जन्मतिथि', 'आधार कार्ड संख्या', 'दिव्यांगता', 'व्यवसाय', 
-      'साक्षर/निरक्षर', 'मोबाइल नंबर'
-    ];
+    let requiredFields: (keyof FamilyMember)[] = [];
+    
+    if (modalMode === 'family') {
+      requiredFields = [
+        'मकान नम्बर', 'परिवार के प्रमुख का नाम', 'फैमिली ID', 'राशन कार्ड संख्या', 
+        'राशन कार्ड का प्रकार', 'धर्म', 'जाति'
+      ];
+    } else {
+      requiredFields = [
+        'मकान नम्बर', 'सदस्य का नाम', 'पिता / पति का नाम', 
+        'लिंग (पु०/म०)', 'जन्मतिथि', 'आधार कार्ड संख्या', 'दिव्यांगता', 'व्यवसाय', 
+        'साक्षर/निरक्षर', 'मोबाइल नंबर'
+      ];
+    }
 
     for (const field of requiredFields) {
       if (!formData[field]) return `${field} अनिवार्य है`;
     }
 
-    if (formData['आधार कार्ड संख्या'].toString().length !== 12) {
-      return 'आधार कार्ड संख्या 12 अंकों की होनी चाहिए';
-    }
+    if (modalMode === 'member') {
+      if (formData['आधार कार्ड संख्या'].toString().length !== 12) {
+        return 'आधार कार्ड संख्या 12 अंकों की होनी चाहिए';
+      }
 
-    if (formData['मोबाइल नंबर'].toString().length !== 10) {
-      return 'मोबाइल नंबर 10 अंकों का होना चाहिए';
-    }
+      if (formData['मोबाइल नंबर'].toString().length !== 10) {
+        return 'मोबाइल नंबर 10 अंकों का होना चाहिए';
+      }
 
-    if (formData['दिव्यांगता'] === 'Yes' && !formData['दिव्यांगता का प्रकार']) {
-      return 'दिव्यांगता का प्रकार अनिवार्य है';
-    }
+      if (formData['दिव्यांगता'] === 'Yes' && !formData['दिव्यांगता का प्रकार']) {
+        return 'दिव्यांगता का प्रकार अनिवार्य है';
+      }
 
-    if (formData['साक्षर/निरक्षर'] === 'साक्षर' && !formData['यदि साक्षर तो शैक्षिक स्तर']) {
-      return 'शैक्षिक स्तर अनिवार्य है';
+      if (formData['साक्षर/निरक्षर'] === 'साक्षर' && !formData['यदि साक्षर तो शैक्षिक स्तर']) {
+        return 'शैक्षिक स्तर अनिवार्य है';
+      }
     }
 
     const hindiRegex = /^[\u0900-\u097F\s.]+$/;
-    if (!hindiRegex.test(formData['परिवार के प्रमुख का नाम']) || 
-        !hindiRegex.test(formData['सदस्य का नाम']) || 
-        !hindiRegex.test(formData['पिता / पति का नाम'])) {
-      return 'नाम केवल हिंदी भाषा में होने चाहिए';
+    
+    if (modalMode === 'family') {
+      if (!hindiRegex.test(formData['परिवार के प्रमुख का नाम'])) {
+        return 'परिवार प्रमुख का नाम केवल हिंदी भाषा में होना चाहिए';
+      }
+    } else {
+      if (!hindiRegex.test(formData['सदस्य का नाम']) || 
+          !hindiRegex.test(formData['पिता / पति का नाम'])) {
+        return 'सदस्य और पिता/पति का नाम केवल हिंदी भाषा में होने चाहिए';
+      }
     }
 
     return null;
@@ -242,7 +258,6 @@ export default function App() {
         // Reset form but keep house number
         setFormData({ ...emptyMember, 'मकान नम्बर': savedHouse });
         setIsModalOpen(false);
-        setHideFamilySection(false);
       } else {
         setAlert({ type: 'error', message: result.message || 'कुछ गलत हुआ' });
       }
@@ -326,10 +341,10 @@ export default function App() {
     }
   };
 
-  const loadMemberIntoForm = (member: FamilyMember, hideFamily: boolean = false) => {
+  const loadMemberIntoForm = (member: FamilyMember, mode: 'family' | 'member' = 'family') => {
     setFormData(member);
     setIsUpdate(true);
-    setHideFamilySection(hideFamily);
+    setModalMode(mode);
     setIsModalOpen(true);
   };
 
@@ -482,7 +497,7 @@ export default function App() {
                       </div>
                       
                       <button 
-                        onClick={() => loadMemberIntoForm(familyMembers[0])}
+                        onClick={() => loadMemberIntoForm(familyMembers[0], 'family')}
                         className="group relative overflow-hidden px-8 py-4 rounded-2xl bg-white/5 border border-white/20 text-white font-black uppercase tracking-widest shadow-xl hover:bg-white/10 transition-all flex items-center gap-3"
                       >
                         <Edit2 size={18} />
@@ -566,7 +581,7 @@ export default function App() {
                             'जाति': cast
                           });
                           setIsUpdate(false);
-                          setHideFamilySection(true);
+                          setModalMode('member');
                           setIsModalOpen(true);
                         }}
                         className="group flex items-center gap-3 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl transition-all shadow-xl shadow-indigo-500/20 active:scale-95 border border-indigo-400/20"
@@ -594,12 +609,12 @@ export default function App() {
                       <button 
                         onClick={() => {
                           setIsUpdate(false);
-                          setHideFamilySection(true);
+                          setModalMode('family');
                           setIsModalOpen(true);
                         }}
                         className="mt-8 px-10 py-4 bg-white/5 border border-white/10 rounded-2xl font-black uppercase text-sm hover:bg-white/10 transition-all"
                       >
-                        नया सदस्य जोड़ें
+                        नया परिवार जोड़ें
                       </button>
                     </div>
                   ) : (
@@ -619,7 +634,7 @@ export default function App() {
                               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-black shadow-2xl transition-transform group-hover:scale-110 ${
                                 member['लिंग (पु०/म०)'] === 'पु०' ? 'bg-gradient-to-br from-blue-400 to-indigo-600 text-white' : 'bg-gradient-to-br from-pink-400 to-rose-600 text-white'
                               }`}>
-                                {member['क्रम संख्या']}
+                                {idx + 1}
                               </div>
                               <div>
                                 <h3 className="text-xl font-black text-white leading-tight">{member['सदस्य का नाम']}</h3>
@@ -628,7 +643,7 @@ export default function App() {
                             </div>
                             <div className="flex gap-2">
                               <button 
-                                onClick={() => loadMemberIntoForm(member, true)}
+                                onClick={() => loadMemberIntoForm(member, 'member')}
                                 className="p-3 bg-white/5 rounded-2xl border border-white/10 text-white/40 hover:text-indigo-400 hover:border-indigo-400/50 hover:bg-white/10 transition-all active:scale-90"
                               >
                                 <Edit2 size={18} />
@@ -670,10 +685,7 @@ export default function App() {
           >
             <div 
               className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm"
-              onClick={() => {
-                setIsModalOpen(false);
-                setHideFamilySection(false);
-              }}
+              onClick={() => setIsModalOpen(false)}
             />
             
             <motion.div
@@ -684,125 +696,131 @@ export default function App() {
             >
               <div className="sticky top-0 z-10 px-8 py-6 bg-[#020617] border-b border-white/10 flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-black uppercase tracking-widest text-white">विवरण भरें</h2>
+                  <h2 className="text-2xl font-black uppercase tracking-widest text-white">
+                    {modalMode === 'family' ? 'पारिवारिक विवरण' : 'सदस्य विवरण'}
+                  </h2>
                   <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mt-1">
-                    {isUpdate ? 'रिकॉर्ड अपडेट करें' : 'नया सदस्य जोड़ें'}
+                    {isUpdate ? 'रिकॉर्ड अपडेट करें' : 'नया विवरण जोड़ें'}
                   </p>
                 </div>
-                  <button 
-                    onClick={() => {
-                      setIsModalOpen(false);
-                      setHideFamilySection(false);
-                    }}
-                    className="p-3 hover:bg-white/10 rounded-2xl text-white/40 transition-colors"
-                  >
-                    <Plus size={24} className="rotate-45" />
-                  </button>
-                </div>
-
-                <form 
-                  onSubmit={(e) => {
-                    handleSubmit(e);
-                    // Modal closing is handled after successful submit in real app, 
-                    // for now we trust the user's intent or keep it open for alerts.
-                  }} 
-                  className="p-8 md:p-12 space-y-10"
+                <button 
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-3 hover:bg-white/10 rounded-2xl text-white/40 transition-colors"
                 >
-                  {/* Family Section */}
-                  {!hideFamilySection && (
-                    <div className="space-y-6">
-                      <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white/30 flex items-center gap-3">
-                        <span className="w-8 h-px bg-white/10"></span>
-                        पारिवारिक विवरण
-                        <span className="flex-1 h-px bg-white/10"></span>
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">मकान नम्बर *</label>
-                          <input
-                            type="text"
-                            name="मकान नम्बर"
-                            value={formData['मकान नम्बर']}
-                            onChange={handleChange}
-                            onBlur={handleHouseBlur}
-                            className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none font-bold focus:bg-white/10 focus:border-indigo-500/50 transition-all"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">परिवार प्रमुख *</label>
-                          <input
-                            type="text"
-                            name="परिवार के प्रमुख का नाम"
-                            value={formData['परिवार के प्रमुख का नाम']}
-                            onChange={handleChange}
-                            className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none font-bold focus:bg-white/10"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">फैमिली ID *</label>
-                          <input
-                            type="text"
-                            name="फैमिली ID"
-                            value={formData['फैमिली ID']}
-                            onChange={handleChange}
-                            className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none font-mono font-bold"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">राशन कार्ड नं *</label>
-                          <input
-                            type="text"
-                            name="राशन कार्ड संख्या"
-                            value={formData['राशन कार्ड संख्या']}
-                            onChange={handleChange}
-                            className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none font-mono font-bold"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">राशन कार्ड प्रकार</label>
-                          <select 
-                            name="राशन कार्ड का प्रकार" 
-                            value={formData['राशन कार्ड का प्रकार']} 
-                            onChange={handleChange}
-                            className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl cursor-pointer text-white"
-                          >
-                            <option value="" className="bg-[#020617] text-white">चुनें</option>
-                            {RATION_CARD_TYPES.map(t => <option key={t} value={t} className="bg-[#020617] text-white">{t}</option>)}
-                          </select>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">धर्म</label>
-                          <select name="धर्म" value={formData['धर्म']} onChange={handleChange} className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl text-white">
-                            <option value="" className="bg-[#020617] text-white">चुनें</option>
-                            {RELIGIONS.map(r => <option key={r} value={r} className="bg-[#020617] text-white">{r}</option>)}
-                          </select>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">जाति</label>
-                          <select name="जाति" value={formData['जाति']} onChange={handleChange} className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl text-white">
-                            <option value="" className="bg-[#020617] text-white">चुनें</option>
-                            {CASTES.map(c => <option key={c} value={c} className="bg-[#020617] text-white">{c}</option>)}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <Plus size={24} className="rotate-45" />
+                </button>
+              </div>
 
-                  {/* Member Section */}
-                  <div className="space-y-6">
+              <form 
+                onSubmit={handleSubmit}
+                className="p-8 md:p-12 space-y-10"
+              >
+                {/* Family Section */}
+                {modalMode === 'family' && (
+                  <div className="space-y-6 animate-fade-in shadow-[0_0_50px_-12px_rgba(79,70,229,0.1)]">
                     <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white/30 flex items-center gap-3">
                       <span className="w-8 h-px bg-white/10"></span>
-                      सदस्य विवरण
+                      मुख्य पारिवारिक सूचना
                       <span className="flex-1 h-px bg-white/10"></span>
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">मकान नम्बर *</label>
+                        <input
+                          type="text"
+                          name="मकान नम्बर"
+                          value={formData['मकान नम्बर']}
+                          onChange={handleChange}
+                          onBlur={handleHouseBlur}
+                          className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none font-bold focus:bg-white/10 focus:border-indigo-500/50 transition-all"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">परिवार प्रमुख *</label>
+                        <input
+                          type="text"
+                          name="परिवार के प्रमुख का नाम"
+                          value={formData['परिवार के प्रमुख का नाम']}
+                          onChange={handleChange}
+                          className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none font-bold focus:bg-white/10"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">फैमिली ID *</label>
+                        <input
+                          type="text"
+                          name="फैमिली ID"
+                          value={formData['फैमिली ID']}
+                          onChange={handleChange}
+                          className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none font-mono font-bold"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">राशन कार्ड नं *</label>
+                        <input
+                          type="text"
+                          name="राशन कार्ड संख्या"
+                          value={formData['राशन कार्ड संख्या']}
+                          onChange={handleChange}
+                          className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none font-mono font-bold"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">राशन कार्ड प्रकार</label>
+                        <select 
+                          name="राशन कार्ड का प्रकार" 
+                          value={formData['राशन कार्ड का प्रकार']} 
+                          onChange={handleChange}
+                          className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl cursor-pointer text-white"
+                        >
+                          <option value="" className="bg-[#020617] text-white">चुनें</option>
+                          {RATION_CARD_TYPES.map(t => <option key={t} value={t} className="bg-[#020617] text-white">{t}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">धर्म</label>
+                        <select name="धर्म" value={formData['धर्म']} onChange={handleChange} className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl text-white">
+                          <option value="" className="bg-[#020617] text-white">चुनें</option>
+                          {RELIGIONS.map(r => <option key={r} value={r} className="bg-[#020617] text-white">{r}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">जाति</label>
+                        <select name="जाति" value={formData['जाति']} onChange={handleChange} className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl text-white">
+                          <option value="" className="bg-[#020617] text-white">चुनें</option>
+                          {CASTES.map(c => <option key={c} value={c} className="bg-[#020617] text-white">{c}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Member Section */}
+                {modalMode === 'member' && (
+                  <div className="space-y-6 animate-fade-in shadow-[0_0_50px_-12px_rgba(236,72,153,0.1)]">
+                    <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white/30 flex items-center gap-3">
+                      <span className="w-8 h-px bg-white/10"></span>
+                      व्यक्तिगत सदस्य सूचना
+                      <span className="flex-1 h-px bg-white/10"></span>
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">मकान नम्बर *</label>
+                        <input
+                          type="text"
+                          name="मकान नम्बर"
+                          value={formData['मकान नम्बर']}
+                          readOnly
+                          className="w-full px-5 py-4 bg-white/10 border border-white/10 rounded-2xl outline-none font-bold text-white/60"
+                        />
+                      </div>
+                      <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">सदस्य का नाम *</label>
-                        <input name="सदस्य का नाम" value={formData['सदस्य का नाम']} onChange={handleChange} className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold" />
+                        <input name="सदस्य का नाम" value={formData['सदस्य का नाम']} onChange={handleChange} className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold focus:bg-white/10 outline-none" placeholder="हिंदी में दर्ज करें" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">पिता / पति *</label>
-                        <input name="पिता / पति का नाम" value={formData['पिता / पति का नाम']} onChange={handleChange} className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold" />
+                        <input name="पिता / पति का नाम" value={formData['पिता / पति का नाम']} onChange={handleChange} className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold focus:bg-white/10 outline-none" placeholder="हिंदी में दर्ज करें" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">लिंग (पु०/म०) *</label>
@@ -872,48 +890,49 @@ export default function App() {
                       </div>
                     </div>
                   </div>
+                )}
 
-                  <AnimatePresence>
-                    {alert && (
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        className={`p-6 rounded-2xl flex items-center gap-4 border backdrop-blur-md ${
-                          alert.type === 'success' ? 'bg-emerald-500/90 border-emerald-400 text-white' : 'bg-red-500/90 border-red-400 text-white'
-                        }`}
-                      >
-                        {alert.type === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
-                        <p className="text-sm font-black uppercase tracking-widest">{alert.message}</p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                <AnimatePresence>
+                  {alert && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      className={`p-6 rounded-2xl flex items-center gap-4 border backdrop-blur-md ${
+                        alert.type === 'success' ? 'bg-emerald-500/90 border-emerald-400 text-white' : 'bg-red-500/90 border-red-400 text-white'
+                      }`}
+                    >
+                      {alert.type === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
+                      <p className="text-sm font-black uppercase tracking-widest">{alert.message}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-                  <div className="pt-6">
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="group relative w-full overflow-hidden rounded-2xl shadow-2xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50"
-                    >
-                      <div className={`absolute inset-0 bg-gradient-to-r ${isUpdate ? 'from-amber-500 to-orange-600' : 'from-indigo-600 to-purple-700'}`} />
-                      <div className="relative flex items-center justify-center gap-3 py-5 text-white font-black text-lg tracking-[0.1em] uppercase">
-                        {loading ? <RefreshCw className="animate-spin" size={24} /> : isUpdate ? <RefreshCw size={24} /> : <Save size={24} />}
-                        {isUpdate ? 'अद्यतन करें' : 'सुरक्षित करें'}
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsModalOpen(false)}
-                      className="w-full mt-4 py-4 text-white/30 font-black uppercase text-xs tracking-widest hover:text-white transition-colors"
-                    >
-                      वापस जाएं (Cancel)
-                    </button>
-                  </div>
-                </form>
-              </motion.div>
+                <div className="pt-6">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="group relative w-full overflow-hidden rounded-2xl shadow-2xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50"
+                  >
+                    <div className={`absolute inset-0 bg-gradient-to-r ${isUpdate ? 'from-amber-500 to-orange-600' : 'from-indigo-600 to-purple-700'}`} />
+                    <div className="relative flex items-center justify-center gap-3 py-5 text-white font-black text-lg tracking-[0.1em] uppercase">
+                      {loading ? <RefreshCw className="animate-spin" size={24} /> : isUpdate ? <RefreshCw size={24} /> : <Save size={24} />}
+                      {isUpdate ? 'अद्यतन करें' : 'सुरक्षित करें'}
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="w-full mt-4 py-4 text-white/30 font-black uppercase text-xs tracking-widest hover:text-white transition-colors"
+                  >
+                    वापस जाएं (Cancel)
+                  </button>
+                </div>
+              </form>
             </motion.div>
-          )}
-        </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
         <AnimatePresence>
           {memberToDelete && (
