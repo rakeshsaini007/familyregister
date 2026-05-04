@@ -51,15 +51,16 @@ function doPost(e) {
     let rows = data.slice(1);
     
     // Find if member already exists in this house
-    // Criteria: House Number (B) AND Member Name (I)
+    // Use original values if provided to allow renaming member or changing house number
+    const houseToSearch = (body._originalHouse !== undefined ? body._originalHouse : body['मकान नम्बर']).toString().trim();
+    const nameToSearch = (body._originalName !== undefined ? body._originalName : body['सदस्य का नाम']).toString().trim();
+    
     let targetIndex = -1;
     for (let i = 0; i < rows.length; i++) {
       const houseInRow = rows[i][1] ? rows[i][1].toString().trim() : '';
       const nameInRow = rows[i][8] ? rows[i][8].toString().trim() : '';
-      const houseInBody = body['मकान नम्बर'] ? body['मकान नम्बर'].toString().trim() : '';
-      const nameInBody = body['सदस्य का नाम'] ? body['सदस्य का नाम'].toString().trim() : '';
 
-      if (houseInRow === houseInBody && nameInRow === nameInBody) {
+      if (houseInRow === houseToSearch && nameInRow === nameToSearch) {
         targetIndex = i;
         break;
       }

@@ -51,6 +51,7 @@ export default function App() {
   const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'family' | 'member'>('family');
+  const [originalRecord, setOriginalRecord] = useState<{ house: string, name: string } | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<FamilyMember | null>(null);
 
   // Age calculation
@@ -178,14 +179,10 @@ export default function App() {
     }
   };
 
-  // Check if member exists to toggle Update/Submit
+  // Check if we are in update mode
   useEffect(() => {
-    const existing = familyMembers.find(m => 
-      m['सदस्य का नाम'] === formData['सदस्य का नाम'] && 
-      m['मकान नम्बर'].toString() === formData['मकान नम्बर'].toString()
-    );
-    setIsUpdate(!!existing);
-  }, [formData['सदस्य का नाम'], formData['मकान नम्बर'], familyMembers]);
+    setIsUpdate(!!originalRecord);
+  }, [originalRecord]);
 
   // Handle Input Changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -228,10 +225,16 @@ export default function App() {
 
     setLoading(true);
     try {
+      const payload = { 
+        ...formData,
+        _originalHouse: originalRecord?.house,
+        _originalName: originalRecord?.name
+      };
+      
       const response = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       const result = await response.json();
       
@@ -247,6 +250,7 @@ export default function App() {
         
         // Reset form but keep house number
         setFormData({ ...emptyMember, 'मकान नम्बर': savedHouse });
+        setOriginalRecord(null);
         setIsModalOpen(false);
       } else {
         setAlert({ type: 'error', message: result.message || 'कुछ गलत हुआ' });
@@ -333,6 +337,10 @@ export default function App() {
 
   const loadMemberIntoForm = (member: FamilyMember, mode: 'family' | 'member' = 'family') => {
     setFormData(member);
+    setOriginalRecord({ 
+      house: member['मकान नम्बर'].toString(), 
+      name: member['सदस्य का नाम'].toString() 
+    });
     setIsUpdate(true);
     setModalMode(mode);
     setIsModalOpen(true);
@@ -570,6 +578,7 @@ export default function App() {
                             'धर्म': rel,
                             'जाति': cast
                           });
+                          setOriginalRecord(null);
                           setIsUpdate(false);
                           setModalMode('member');
                           setIsModalOpen(true);
@@ -598,6 +607,7 @@ export default function App() {
                       <p className="font-black uppercase tracking-widest text-white/40">कोई रिकॉर्ड उपलब्ध नहीं है</p>
                       <button 
                         onClick={() => {
+                          setOriginalRecord(null);
                           setIsUpdate(false);
                           setModalMode('family');
                           setIsModalOpen(true);
