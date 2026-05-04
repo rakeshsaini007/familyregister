@@ -85,7 +85,15 @@ function doPost(e) {
           .setMimeType(ContentService.MimeType.JSON);
       }
     } else {
-      const timestamp = new Date().toLocaleString();
+      const formatDate = (date) => {
+        const d = new Date(date);
+        const day = ("0" + d.getDate()).slice(-2);
+        const month = ("0" + (d.getMonth() + 1)).slice(-2);
+        const year = d.getFullYear();
+        return day + "-" + month + "-" + year;
+      };
+
+      const timestamp = formatDate(new Date());
       const isUpdate = (targetIndex !== -1);
       
       // IF it is a NEW member AND the house already has family data elsewhere, 
@@ -101,9 +109,14 @@ function doPost(e) {
         if (header === 'Timestamp') return timestamp;
         if (header === 'क्रम संख्या') return ''; // Will be calculated after sorting
         
-        // Get value from body or keep existing if updating
-        if (body[header] !== undefined) return body[header];
-        return isUpdate ? rows[targetIndex][index] : '';
+        let value = body[header] !== undefined ? body[header] : (isUpdate ? rows[targetIndex][index] : '');
+        
+        // Format date fields if they are in YYYY-MM-DD format (typical for HTML date input)
+        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+          value = formatDate(value);
+        }
+        
+        return value;
       });
       
       if (isUpdate) {

@@ -120,14 +120,12 @@ export default function App() {
     
     if (modalMode === 'family') {
       requiredFields = [
-        'मकान नम्बर', 'परिवार के प्रमुख का नाम', 'फैमिली ID', 'राशन कार्ड संख्या', 
+        'मकान नम्बर', 'परिवार के प्रमुख का नाम', 
         'राशन कार्ड का प्रकार', 'धर्म', 'जाति'
       ];
     } else {
       requiredFields = [
-        'मकान नम्बर', 'सदस्य का नाम', 'पिता / पति का नाम', 
-        'लिंग (पु०/म०)', 'जन्मतिथि', 'आधार कार्ड संख्या', 'दिव्यांगता', 'व्यवसाय', 
-        'साक्षर/निरक्षर', 'मोबाइल नंबर'
+        'मकान नम्बर', 'सदस्य का नाम', 'पिता / पति का नाम', 'लिंग (पु०/म०)'
       ];
     }
 
@@ -136,20 +134,12 @@ export default function App() {
     }
 
     if (modalMode === 'member') {
-      if (formData['आधार कार्ड संख्या'].toString().length !== 12) {
+      if (formData['आधार कार्ड संख्या'] && formData['आधार कार्ड संख्या'].toString().length !== 12) {
         return 'आधार कार्ड संख्या 12 अंकों की होनी चाहिए';
       }
 
-      if (formData['मोबाइल नंबर'].toString().length !== 10) {
+      if (formData['मोबाइल नंबर'] && formData['मोबाइल नंबर'].toString().length !== 10) {
         return 'मोबाइल नंबर 10 अंकों का होना चाहिए';
-      }
-
-      if (formData['दिव्यांगता'] === 'Yes' && !formData['दिव्यांगता का प्रकार']) {
-        return 'दिव्यांगता का प्रकार अनिवार्य है';
-      }
-
-      if (formData['साक्षर/निरक्षर'] === 'साक्षर' && !formData['यदि साक्षर तो शैक्षिक स्तर']) {
-        return 'शैक्षिक स्तर अनिवार्य है';
       }
     }
 
@@ -746,7 +736,7 @@ export default function App() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">फैमिली ID *</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">फैमिली ID</label>
                         <input
                           type="text"
                           name="फैमिली ID"
@@ -756,7 +746,7 @@ export default function App() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">राशन कार्ड नं *</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">राशन कार्ड नं</label>
                         <input
                           type="text"
                           name="राशन कार्ड संख्या"
@@ -830,7 +820,7 @@ export default function App() {
                         </select>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">जन्मतिथि *</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">जन्मतिथि</label>
                         <input name="जन्मतिथि" value={formData['जन्मतिथि']} onChange={handleChange} placeholder="DD-MM-YYYY" className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl font-mono" />
                       </div>
                       <div className="space-y-2">
@@ -838,11 +828,11 @@ export default function App() {
                         <input name="उम्र" value={formData['उम्र']} readOnly className="w-full px-5 py-4 bg-white/10 border border-white/10 rounded-2xl font-mono text-white/60" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">आधार कार्ड संख्या *</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">आधार कार्ड संख्या</label>
                         <input name="आधार कार्ड संख्या" value={formData['आधार कार्ड संख्या']} onChange={handleChange} maxLength={12} className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl font-mono" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">मोबाइल नंबर *</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">मोबाइल नंबर</label>
                         <input name="मोबाइल नंबर" value={formData['मोबाइल नंबर']} onChange={handleChange} maxLength={10} className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl font-mono" />
                       </div>
                       <div className="space-y-2">
@@ -854,7 +844,7 @@ export default function App() {
                       </div>
                       {formData['दिव्यांगता'] === 'Yes' && (
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">दिव्यांगता का प्रकार *</label>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">दिव्यांगता का प्रकार</label>
                           <select name="दिव्यांगता का प्रकार" value={formData['दिव्यांगता का प्रकार']} onChange={handleChange} className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl text-white">
                             <option value="" className="bg-[#020617] text-white">चुनें</option>
                             {DISABILITY_TYPES.map(t => <option key={t} value={t} className="bg-[#020617] text-white">{t}</option>)}
@@ -869,7 +859,7 @@ export default function App() {
                         </select>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">साक्षर/निरक्षर *</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">साक्षर/निरक्षर</label>
                         <select name="साक्षर/निरक्षर" value={formData['साक्षर/निरक्षर']} onChange={handleChange} className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl text-white">
                           <option value="" className="bg-[#020617] text-white">चुनें</option>
                           {LITERACY_STATUS.map(s => <option key={s} value={s} className="bg-[#020617] text-white">{s}</option>)}
@@ -877,7 +867,7 @@ export default function App() {
                       </div>
                       {formData['साक्षर/निरक्षर'] === 'साक्षर' && (
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">यदि साक्षर तो शैक्षिक स्तर *</label>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">यदि साक्षर तो शैक्षिक स्तर</label>
                           <select name="यदि साक्षर तो शैक्षिक स्तर" value={formData['यदि साक्षर तो शैक्षिक स्तर']} onChange={handleChange} className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl text-white">
                             <option value="" className="bg-[#020617] text-white">चुनें</option>
                             {EDUCATION_LEVELS.map(l => <option key={l} value={l} className="bg-[#020617] text-white">{l}</option>)}
