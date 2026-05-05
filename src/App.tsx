@@ -1177,30 +1177,30 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-2xl overflow-y-auto"
+            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-3xl overflow-y-auto"
           >
-            <div className="min-h-screen py-10 w-full flex flex-col items-center">
-              <div className="flex flex-col md:flex-row items-center justify-between w-full max-w-[210mm] mb-8 px-6 gap-6">
-                <div className="flex items-center gap-4">
-                  <span className="w-12 h-12 bg-indigo-500/20 rounded-full flex items-center justify-center border border-indigo-500/30">
-                    <FileDown className="text-indigo-400" size={24} />
-                  </span>
+            <div className="min-h-full w-full flex flex-col items-center pt-10 pb-20 px-4">
+              <div className="sticky top-4 z-[110] flex flex-col md:flex-row items-center justify-between w-full max-w-[210mm] mb-12 px-8 py-6 gap-6 bg-white/5 border border-white/10 rounded-[2rem] backdrop-blur-xl shadow-2xl">
+                <div className="flex items-center gap-5">
+                  <div className="w-14 h-14 bg-indigo-500/20 rounded-2xl flex items-center justify-center border border-indigo-500/30 rotate-3 shadow-inner">
+                    <FileDown className="text-indigo-400" size={28} />
+                  </div>
                   <div className="flex flex-col">
-                    <h2 className="text-xl font-black text-white uppercase tracking-[0.2em] leading-none">दस्तावेज़ पूर्वावलोकन</h2>
-                    <p className="text-white/30 text-[8px] font-bold uppercase tracking-[0.2em] mt-1">डाउनलोड करने से पहले जांच लें</p>
+                    <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] leading-none">दस्तावेज़ पूर्वावलोकन</h2>
+                    <p className="text-white/30 text-[9px] font-black uppercase tracking-[0.3em] mt-2">डाउनलोड करने से पहले विवरण जांचें</p>
                   </div>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex gap-4 w-full md:w-auto">
                   <button 
                     onClick={() => setShowPdfPreview(false)}
-                    className="group px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-white/50 font-black uppercase text-xs tracking-widest hover:bg-white/10 hover:text-white transition-all flex items-center gap-2"
+                    className="flex-1 md:flex-none group px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-white/50 font-black uppercase text-[10px] tracking-[0.2em] hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-2"
                   >
                     वापस जाएं
                   </button>
                   <button 
                     onClick={generatePDF}
                     disabled={loading}
-                    className="relative group px-10 py-4 bg-indigo-600 rounded-2xl text-white font-black uppercase text-xs tracking-widest flex items-center gap-3 overflow-hidden shadow-2xl shadow-indigo-500/40 transition-all hover:bg-indigo-500 hover:scale-105 active:scale-95 disabled:opacity-50"
+                    className="flex-1 md:flex-none relative group px-10 py-4 bg-indigo-600 rounded-2xl text-white font-black uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 overflow-hidden shadow-2xl shadow-indigo-500/40 transition-all hover:bg-indigo-500 hover:scale-105 active:scale-95 disabled:opacity-50"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
                     {loading ? <RefreshCw className="animate-spin" size={20} /> : <FileDown size={20} />}
@@ -1210,12 +1210,13 @@ export default function App() {
               </div>
 
               <motion.div 
-                initial={{ y: 40, opacity: 0, scale: 0.95 }}
+                initial={{ y: 60, opacity: 0, scale: 0.95 }}
                 animate={{ y: 0, opacity: 1, scale: 1 }}
-                transition={{ type: "spring", damping: 25, stiffness: 120 }}
-                className="bg-white shadow-[0_40px_100px_rgba(0,0,0,0.8)] rounded-lg origin-top overflow-hidden transform scale-[0.45] sm:scale-[0.65] md:scale-[0.85] lg:scale-100 transition-all border border-white/10"
+                transition={{ type: "spring", damping: 30, stiffness: 100 }}
+                className="bg-white shadow-[0_60px_130px_-30px_rgba(0,0,0,0.9)] rounded-sm origin-top overflow-hidden transition-all border border-white/10"
+                style={{ width: '210mm', minHeight: '297mm' }}
               >
-                <div className="w-[210mm] max-h-[80vh] md:max-h-none overflow-y-auto md:overflow-visible custom-scrollbar">
+                <div className="w-full h-full scale-[0.4] sm:scale-[0.6] md:scale-[0.85] lg:scale-100 origin-top">
                   <FamilyRegisterDocument familyMembers={familyMembers} formatDisplayDate={formatDisplayDate} />
                 </div>
               </motion.div>
