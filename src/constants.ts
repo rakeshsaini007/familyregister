@@ -68,7 +68,8 @@ export const OCCUPATIONS = [
   'सहायिका',
   'रसोईया',
   'पुलिस',
-  'आर्मी'
+  'आर्मी',
+  'अध्ययनरत'
 ];
 
 export const LITERACY_STATUS = ['साक्षर', 'निरक्षर'];
