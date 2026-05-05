@@ -24,7 +24,7 @@ function doGet(e) {
   // If houseNumber is provided, filter by it
   if (houseNumber) {
     const familyMembers = rows
-      .filter(row => row[1].toString() === houseNumber.toString())
+      .filter(row => row[1] && row[1].toString().trim() === houseNumber.toString().trim())
       .map(row => {
         let obj = {};
         headers.forEach((header, index) => {
@@ -37,7 +37,16 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
   
-  return ContentService.createTextOutput(JSON.stringify({ error: 'No houseNumber provided' }))
+  // If no houseNumber, return ALL members (for Advanced filter)
+  const allMembers = rows.map(row => {
+    let obj = {};
+    headers.forEach((header, index) => {
+      obj[header] = row[index];
+    });
+    return obj;
+  });
+  
+  return ContentService.createTextOutput(JSON.stringify(allMembers))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
