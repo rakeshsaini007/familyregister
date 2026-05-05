@@ -24,9 +24,12 @@ import {
   UserCheck,
   UserMinus,
   Edit2,
-  Trash2
+  Trash2,
+  FileDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { FamilyMember, emptyMember } from './types.ts';
 import { 
   RATION_CARD_TYPES, 
@@ -41,6 +44,131 @@ import {
   GAS_URL 
 } from './constants.ts';
 
+const FamilyRegisterDocument = ({ familyMembers, formatDisplayDate }: { familyMembers: FamilyMember[], formatDisplayDate: (d: any) => string }) => (
+  <div 
+    className="p-12 bg-white text-black text-[14px]"
+    style={{ fontFamily: "'Noto Sans Devanagari', sans-serif" }}
+  >
+    <h1 className="text-center text-xl font-bold mb-6 uppercase tracking-wider">परिवार रजिस्टर की नकल</h1>
+    
+    <div className="mb-4">
+      {/* Row 1 */}
+      <div className="flex items-center">
+        <div className="flex-1 p-2">
+          <span className="font-bold">न्याय पंचायत का नाम -</span> पुष्वाड़ा
+        </div>
+        <div className="flex-1 p-2 text-center">
+          <span className="font-bold">ग्राम पंचायत का नाम -</span> पुष्वाड़ा
+        </div>
+        <div className="flex-1 p-2 text-right">
+          <span className="font-bold">गाँव का नाम -</span> पुष्वाड़ा
+        </div>
+      </div>
+      
+      {/* Row 2 */}
+      <div className="flex items-center">
+        <div className="w-[20%] p-2">
+          <span className="font-bold">तहसील -</span> स्वार
+        </div>
+        <div className="w-[30%] p-2">
+          <span className="font-bold">जिला -</span> रामपुर
+        </div>
+        <div className="w-[30%] p-2">
+          <span className="font-bold">राज्य -</span> उत्तर प्रदेश
+        </div>
+        <div className="w-[20%] p-2 text-right">
+          <span className="font-bold">पिन कोड -</span> 244924
+        </div>
+      </div>
+
+      {/* Row 3 */}
+      <div className="flex items-center">
+        <div className="w-[25%] p-2">
+          <p className="text-[10px] uppercase leading-none mb-1" style={{ color: '#6b7280' }}>फैमिली ID</p>
+          <p className="font-bold">{familyMembers[0]['फैमिली ID'] || '-'}</p>
+        </div>
+        <div className="w-[35%] p-2 text-center">
+          <p className="text-[10px] uppercase leading-none mb-1" style={{ color: '#6b7280' }}>परिवार के प्रमुख का नाम</p>
+          <p className="font-bold">{familyMembers[0]['परिवार के प्रमुख का नाम']}</p>
+        </div>
+        <div className="w-[15%] p-2">
+          <p className="text-[10px] uppercase leading-none mb-1" style={{ color: '#6b7280' }}>धर्म</p>
+          <p>{familyMembers[0]['धर्म']}</p>
+        </div>
+        <div className="w-[25%] p-2 text-right">
+          <p className="text-[10px] uppercase leading-none mb-1" style={{ color: '#6b7280' }}>जाति</p>
+          <p>{familyMembers[0]['जाति']}</p>
+        </div>
+      </div>
+
+      {/* Row 4 */}
+      <div className="flex items-center">
+        <div className="w-[30%] p-2">
+          <p className="text-[10px] uppercase leading-none mb-1" style={{ color: '#6b7280' }}>राशन कार्ड का प्रकार</p>
+          <p>{familyMembers[0]['राशन कार्ड का प्रकार']}</p>
+        </div>
+        <div className="w-[45%] p-2">
+          <p className="text-[10px] uppercase leading-none mb-1" style={{ color: '#6b7280' }}>राशन कार्ड संख्या</p>
+          <p className="font-bold font-mono">{familyMembers[0]['राशन कार्ड संख्या'] || '-'}</p>
+        </div>
+        <div className="w-[25%] p-2 text-center">
+          <p className="text-[10px] uppercase leading-none mb-1" style={{ color: '#6b7280' }}>परिवार में कुल सदस्य</p>
+          <p className="font-bold text-lg">{familyMembers.length}</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 className="text-center font-bold my-6 py-1.5" style={{ backgroundColor: '#f3f4f6' }}>सदस्यों का विवरण</h2>
+    
+    <table className="w-full border-collapse border border-black text-center text-[12px]">
+      <thead>
+        <tr style={{ backgroundColor: '#f9fafb' }}>
+          <th className="border border-black p-2 w-[5%]" style={{ verticalAlign: 'middle' }}>क्रम सं०</th>
+          <th className="border border-black p-2 w-[18%]" style={{ verticalAlign: 'middle' }}>सदस्य का नाम</th>
+          <th className="border border-black p-2 w-[18%]" style={{ verticalAlign: 'middle' }}>पिता / पति का नाम</th>
+          <th className="border border-black p-2 w-[10%]" style={{ verticalAlign: 'middle' }}>लिंग (पु०/म०)</th>
+          <th className="border border-black p-2 w-[12%]" style={{ verticalAlign: 'middle' }}>जन्मतिथि</th>
+          <th className="border border-black p-2 w-[12%]" style={{ verticalAlign: 'middle' }}>आधार कार्ड संख्या</th>
+          <th className="border border-black p-2 w-[10%]" style={{ verticalAlign: 'middle' }}>साक्षर/निरक्षर</th>
+          <th className="border border-black p-2 w-[15%]" style={{ verticalAlign: 'middle' }}>व्यवसाय</th>
+        </tr>
+      </thead>
+      <tbody>
+        {familyMembers.map((m, i) => (
+          <tr key={i}>
+            <td className="border border-black p-2" style={{ verticalAlign: 'middle' }}>{i + 1}</td>
+            <td className="border border-black p-2 font-bold" style={{ verticalAlign: 'middle' }}>{m['सदस्य का नाम']}</td>
+            <td className="border border-black p-2" style={{ verticalAlign: 'middle' }}>{m['पिता / पति का नाम']}</td>
+            <td className="border border-black p-2" style={{ verticalAlign: 'middle' }}>{m['लिंग (पु०/म०)']}</td>
+            <td className="border border-black p-2" style={{ verticalAlign: 'middle' }}>{formatDisplayDate(m['जन्मतिथि'])}</td>
+            <td className="border border-black p-2 font-mono font-bold" style={{ verticalAlign: 'middle' }}>
+              {m['आधार कार्ड संख्या'] || '-'}
+            </td>
+            <td className="border border-black p-2" style={{ verticalAlign: 'middle' }}>{m['साक्षर/निरक्षर']}</td>
+            <td className="border border-black p-2" style={{ verticalAlign: 'middle' }}>{m['व्यवसाय']}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    <div className="mt-16 flex justify-between items-end px-4 text-[13px]">
+      <div>
+        <p className="italic">नकल जारी करने का दिनांक: <span className="font-bold">{new Date().toLocaleDateString('hi-IN')}</span></p>
+        <p className="mt-1">जारीकर्ता: <span className="font-bold">डिजिटल परिवार पंजी प्रणाली</span></p>
+      </div>
+      <div className="text-center">
+        <div className="w-40 h-20 border-b border-black mb-2 flex items-center justify-center italic" style={{ color: '#d1d5db' }}>सील / हस्ताक्षर</div>
+        <p className="font-bold uppercase tracking-widest">ग्राम विकास अधिकारी</p>
+        <p className="text-[10px]">स्वार, रामपुर (उ०प्र०)</p>
+      </div>
+    </div>
+    
+    <div className="mt-12 text-center text-[8px] border-t pt-2" style={{ color: '#9ca3af', borderColor: '#e5e7eb' }}>
+      यह एक कंप्यूटर जनित दस्तावेज है, इसमें किसी भौतिक हस्ताक्षर की आवश्यकता नहीं है।
+    </div>
+  </div>
+);
+
 export default function App() {
   const [formData, setFormData] = useState<FamilyMember>(emptyMember);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
@@ -53,6 +181,45 @@ export default function App() {
   const [modalMode, setModalMode] = useState<'family' | 'member'>('family');
   const [originalRecord, setOriginalRecord] = useState<{ house: string, name: string } | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<FamilyMember | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
+
+  // PDF Export Function
+  const generatePDF = async () => {
+    const element = document.getElementById('family-register-pdf');
+    if (!element) return;
+
+    setIsExporting(true);
+    setLoading(true);
+    
+    try {
+      // Make temporary visible for capture if needed, 
+      // but usually standard scale works better if it's already in DOM but hidden
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Family_Register_House_${familyMembers[0]['मकान नम्बर']}.pdf`);
+      setAlert({ type: 'success', message: 'PDF फाइल तैयार है!' });
+      setShowPdfPreview(false); // Close preview after download
+    } catch (err) {
+      console.error(err);
+      setAlert({ type: 'error', message: 'PDF बनाने में विफल' });
+    } finally {
+      setLoading(false);
+      setIsExporting(false);
+      setTimeout(() => setAlert(null), 3000);
+    }
+  };
 
   // Age calculation
   const calculateAge = (dob: any) => {
@@ -494,13 +661,24 @@ export default function App() {
                         </div>
                       </div>
                       
-                      <button 
-                        onClick={() => loadMemberIntoForm(familyMembers[0], 'family')}
-                        className="group relative overflow-hidden px-8 py-4 rounded-2xl bg-white/5 border border-white/20 text-white font-black uppercase tracking-widest shadow-xl hover:bg-white/10 transition-all flex items-center gap-3"
-                      >
-                        <Edit2 size={18} />
-                        <span>संपादित करें</span>
-                      </button>
+                      <div className="flex flex-wrap gap-3">
+                        <button 
+                          onClick={() => setShowPdfPreview(true)}
+                          disabled={loading}
+                          className="group relative overflow-hidden px-8 py-4 rounded-2xl bg-indigo-600 border border-indigo-400/20 text-white font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 transition-all flex items-center gap-3 disabled:opacity-50"
+                        >
+                          <FileDown size={18} />
+                          <span>परिवार रजिस्टर की नकल डाउनलोड करें</span>
+                        </button>
+                        
+                        <button 
+                          onClick={() => loadMemberIntoForm(familyMembers[0], 'family')}
+                          className="group relative overflow-hidden px-8 py-4 rounded-2xl bg-white/5 border border-white/20 text-white font-black uppercase tracking-widest shadow-xl hover:bg-white/10 transition-all flex items-center gap-3"
+                        >
+                          <Edit2 size={18} />
+                          <span>संपादित करें</span>
+                        </button>
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10 pt-10 border-t border-white/10">
@@ -663,8 +841,8 @@ export default function App() {
                               <p className="text-xs font-bold text-white/80">{formatDisplayDate(member['जन्मतिथि'])} ({calculateAge(member['जन्मतिथि'])})</p>
                             </div>
                             <div className="space-y-1 text-right">
-                              <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Aadhaar</p>
-                              <p className="text-xs font-bold text-white/80">{member['आधार कार्ड संख्या']}</p>
+                              <p className={`text-[9px] font-black uppercase tracking-widest ${member['आधार कार्ड संख्या'] ? 'text-emerald-400' : 'text-rose-400'}`}>Aadhaar</p>
+                              <p className="text-xs font-bold text-white/80">{member['आधार कार्ड संख्या'] || 'नदारद (Missing)'}</p>
                             </div>
                           </div>
                         </motion.div>
@@ -979,6 +1157,76 @@ export default function App() {
             </motion.div>
           )}
         </AnimatePresence>
+
+      {familyMembers.length > 0 && (
+        <div className="absolute left-[-9999px] top-0 pointer-events-none select-none">
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet" />
+          
+          <div id="family-register-pdf" className="w-[210mm]">
+            <FamilyRegisterDocument familyMembers={familyMembers} formatDisplayDate={formatDisplayDate} />
+          </div>
+        </div>
+      )}
+
+      {/* PDF Preview Modal */}
+      <AnimatePresence>
+        {showPdfPreview && familyMembers.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-2xl overflow-y-auto"
+          >
+            <div className="min-h-screen py-10 w-full flex flex-col items-center">
+              <div className="flex flex-col md:flex-row items-center justify-between w-full max-w-[210mm] mb-8 px-6 gap-6">
+                <div className="flex items-center gap-4">
+                  <span className="w-12 h-12 bg-indigo-500/20 rounded-full flex items-center justify-center border border-indigo-500/30">
+                    <FileDown className="text-indigo-400" size={24} />
+                  </span>
+                  <div className="flex flex-col">
+                    <h2 className="text-xl font-black text-white uppercase tracking-[0.2em] leading-none">दस्तावेज़ पूर्वावलोकन</h2>
+                    <p className="text-white/30 text-[8px] font-bold uppercase tracking-[0.2em] mt-1">डाउनलोड करने से पहले जांच लें</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => setShowPdfPreview(false)}
+                    className="group px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-white/50 font-black uppercase text-xs tracking-widest hover:bg-white/10 hover:text-white transition-all flex items-center gap-2"
+                  >
+                    वापस जाएं
+                  </button>
+                  <button 
+                    onClick={generatePDF}
+                    disabled={loading}
+                    className="relative group px-10 py-4 bg-indigo-600 rounded-2xl text-white font-black uppercase text-xs tracking-widest flex items-center gap-3 overflow-hidden shadow-2xl shadow-indigo-500/40 transition-all hover:bg-indigo-500 hover:scale-105 active:scale-95 disabled:opacity-50"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                    {loading ? <RefreshCw className="animate-spin" size={20} /> : <FileDown size={20} />}
+                    <span>डाउनलोड करें</span>
+                  </button>
+                </div>
+              </div>
+
+              <motion.div 
+                initial={{ y: 40, opacity: 0, scale: 0.95 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                transition={{ type: "spring", damping: 25, stiffness: 120 }}
+                className="bg-white shadow-[0_40px_100px_rgba(0,0,0,0.8)] rounded-lg origin-top overflow-hidden transform scale-[0.45] sm:scale-[0.65] md:scale-[0.85] lg:scale-100 transition-all border border-white/10"
+              >
+                <div className="w-[210mm] max-h-[80vh] md:max-h-none overflow-y-auto md:overflow-visible custom-scrollbar">
+                  <FamilyRegisterDocument familyMembers={familyMembers} formatDisplayDate={formatDisplayDate} />
+                </div>
+              </motion.div>
+              
+              <div className="mt-8 text-white/20 text-[10px] font-bold uppercase tracking-[0.5em] animate-pulse">
+                SCROLL TO PREVIEW FULL DOCUMENT
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <footer className="relative z-10 max-w-6xl mx-auto px-4 py-16 border-t border-white/5 text-center">
         <div className="flex flex-col items-center gap-4">
